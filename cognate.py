@@ -1,7 +1,11 @@
 import argparse
 from xygram import XYGram
 from sklearn.neighbors import NearestNeighbors
+from sklearn.metrics import pairwise
 from sklearn.feature_extraction import DictVectorizer
+
+def cosine_distance(X, Y):
+    return 1 - pairwise.cosine_similarity([X], [Y])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -11,7 +15,7 @@ def main():
     parser.add_argument('file2', help="Path to list of entities in dest lang")
     parser.add_argument('-mo', '--offset', type=int, default=3, help="Maximum length of n-grams")
     parser.add_argument('-mf', '--features', type=int, default=3, help="Maximum number of features grouped")
-    parser.add_argument('-d', '--distance', default="cosine", help="Distance metric used for serach")
+    # parser.add_argument('-d', '--distance', default="cosine", help="Distance metric used for serach")
     parser.add_argument('-r', '--recall', type=int, default=5, help="Number of candidates recalled for cognacy")
     args = parser.parse_args()
 
@@ -31,18 +35,23 @@ def main():
     xygrams1 = [ xy.generateXYGram(s, 1) for s in strings1 ]
     xygrams2 = [ xy.generateXYGram(s, 2) for s in strings2 ]
 
-    vec = DictVectorizer()
+    vec = DictVectorizer(sparse=False)
     V = vec.fit_transform(xygrams1 + xygrams2)
     V1 = V[:len(strings1)]
     V2 = V[len(strings1):]
+    print str(V1)
 
-    try:
-        neigh = NearestNeighbors(args.recall, args.distance)
-    except:
-        print "Invalid distance function. Defaulting to Euclidean distance.\n"
-        neigh = NearestNeighbors(args.recall)
+    # try:
+    neigh = NearestNeighbors(args.recall, algorithm='ball_tree', metric=cosine_distance)
+    # except:
+    #     print "\nSPACE USAGE: {}\n".format(len(V) * len(V[0]))
+    #     print "Invalid distance function. Exiting.\n"
+    #     return None
+    print "Initialized NearestNeighbors object."
     neigh.fit(V2)
+    print "Fit NearestNeighbors."
     cognates = neigh.kneighbors(V1, return_distance=False)
+    print "Found neighbors."
 
     # Calculate recall and print out results
     recalled = 0.0
@@ -53,6 +62,7 @@ def main():
         if i in cognates[i]:
             recalled += 1.0
 
-    print "\nRECALL: {0:.1f}%\n".format(recalled / len(strings1) * 100)
+    print "\nSPACE USAGE: {}\n".format(len(V) * len(V[0]))
+    print "\nRECALL: {0:.2f}%\n".format(recalled / len(strings1) * 100)
 
 main()
