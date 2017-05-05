@@ -41,12 +41,7 @@ def main():
     V2 = V[len(strings1):]
     print str(V1)
 
-    # try:
     neigh = NearestNeighbors(args.recall, algorithm='ball_tree', metric=cosine_distance)
-    # except:
-    #     print "\nSPACE USAGE: {}\n".format(len(V) * len(V[0]))
-    #     print "Invalid distance function. Exiting.\n"
-    #     return None
     print "Initialized NearestNeighbors object."
     neigh.fit(V2)
     print "Fit NearestNeighbors."
