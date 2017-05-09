@@ -11,7 +11,7 @@ class XYGram:
     def __init__(self, lang1, lang2, max_offset=3, max_features=3):
         self.epi          = (epitran.Epitran(lang1), epitran.Epitran(lang2))
         self.max_offset   = max_offset
-        self.max_features = max_features
+        self.max_features = min(max_features, len(XYGram.features))
 
     def _allFeatureCombos(self, v):
         result = []

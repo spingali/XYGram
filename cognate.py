@@ -1,4 +1,4 @@
-import argparse
+import argparse, time
 from xygram import XYGram
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import pairwise
@@ -32,21 +32,30 @@ def main():
     strings1 = [ l.strip().decode('utf-8') for l in lines1 ]
     strings2 = [ l.strip().decode('utf-8') for l in lines2 ]
 
+    print "Generating XY-grams..."
+    start_xy = time.time()
+
     xygrams1 = [ xy.generateXYGram(s, 1) for s in strings1 ]
     xygrams2 = [ xy.generateXYGram(s, 2) for s in strings2 ]
+
+    end_xy = time.time()
+
+    print "Vectorizing XY-grams..."
+    start_cognate = time.time()
 
     vec = DictVectorizer(sparse=False)
     V = vec.fit_transform(xygrams1 + xygrams2)
     V1 = V[:len(strings1)]
     V2 = V[len(strings1):]
-    print str(V1)
 
+    print "Initializing NearestNeighbors object..."
     neigh = NearestNeighbors(args.recall, algorithm='ball_tree', metric=cosine_distance)
-    print "Initialized NearestNeighbors object."
+    print "Fitting NearestNeighbors..."
     neigh.fit(V2)
-    print "Fit NearestNeighbors."
+    print "Finding neighbors..."
     cognates = neigh.kneighbors(V1, return_distance=False)
-    print "Found neighbors."
+
+    end_cognate = time.time()
 
     # Calculate recall and print out results
     recalled = 0.0
@@ -57,6 +66,9 @@ def main():
         if i in cognates[i]:
             recalled += 1.0
 
+    print "\nTIME:"
+    print "\tXY-grams: {0:.4f} s".format(end_xy - start_xy) 
+    print "\tCognate Search: {0:.4f} s\n".format(end_cognate - start_cognate)
     print "\nSPACE USAGE: {}\n".format(len(V) * len(V[0]))
     print "\nRECALL: {0:.2f}%\n".format(recalled / len(strings1) * 100)
 
